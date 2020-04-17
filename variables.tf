@@ -1,6 +1,6 @@
 variable "resourceGroup" {
   description = "The Azure resource group where all resources in this example should be created"
-  default    = "TDrockhopper1"
+  default    = "TDrockhopper2"
 }
 
 variable "location" {
