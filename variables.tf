@@ -1,6 +1,6 @@
 variable "resourceGroup" {
   description = "The Azure resource group where all resources in this example should be created"
-  default    = "TDrockhopper2"
+  default    = "TDrockhopper1"
 }
 
 variable "location" {
@@ -47,4 +47,9 @@ variable "vm_name" {
 
 variable "vm_size" {
   default    = "Standard_DS1_v2"
+}
+
+variable "ad_group_suffix" {
+  description = "AD Group Suffix" 
+  default    = "xxxxuhong"
 }

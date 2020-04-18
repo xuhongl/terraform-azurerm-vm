@@ -1,3 +1,6 @@
+provider "vault" {
+}
+
 provider "azurerm" {
     # The "feature" block is required for AzureRM provider 2.x. 
     # If you're using version 1.x, the "features" block is not allowed.
@@ -9,6 +12,7 @@ provider "azurerm" {
     client_secret   = "4ab84a29-7a6e-404f-acd8-ad621b5ef9b1"
     tenant_id       = "9be65afb-169d-45b7-bcc2-987e74362a97"
 }
+
 
 resource "azurerm_resource_group" "myterraformgroup" {
     name     = var.resourceGroup
@@ -134,4 +138,28 @@ resource "azurerm_linux_virtual_machine" "myterraformvm" {
 
     tags = var.tags
 
+    identity {
+    type = "SystemAssigned"
+    }
+
 }
+
+module "azureadgroup" {
+  source          = "tfe.rockhopper.cloudbits.ca/rockhopper/azureadgroup/azurerm"
+  version         = "0.0.3"
+  ad_group        = "AZ_webApp_${var.ad_group_suffix}"
+  ad_group_member = azurerm_linux_virtual_machine.myterraformvm.identity.0.principal_id
+}
+
+module "setsecret" {
+  source  = "tfe.rockhopper.cloudbits.ca/rockhopper/setsecret/vault"
+  version = "0.0.3"
+  secret_name = azurerm_linux_virtual_machine.myterraformvm.name
+  secret_value = <<EOT
+{
+  "app_name" : "${azurerm_linux_virtual_machine.myterraformvm.name}",
+  #"publish_settings" : "<publishData><publishProfile profileName=\"${azurerm_app_service.main.name} - Web Deploy\" publishMethod=\"MSDeploy\" publishUrl=\"${azurerm_app_service.main.name}.scm.azurewebsites.net:443\" msdeploySite=\"${azurerm_app_service.main.name}\" userName=\"${azurerm_app_service.main.site_credential.0.username}\" userPWD=\"${azurerm_app_service.main.site_credential.0.password}\" destinationAppUrl=\"http://${azurerm_app_service.main.name}.azurewebsites.net\" SQLServerDBConnectionString=\"\" mySQLDBConnectionString=\"\" hostingProviderForumLink=\"\" controlPanelLink=\"http://windows.azure.com\" webSystem=\"WebSites\"><databases /></publishProfile><publishProfile profileName=\"${azurerm_app_service.main.name} - FTP\" publishMethod=\"FTP\" publishUrl=\"ftp://waws-prod-blu-113.ftp.azurewebsites.windows.net/site/wwwroot\" ftpPassiveMode=\"True\" userName=\"${azurerm_app_service.main.name}\\${azurerm_app_service.main.site_credential.0.username}\" userPWD=\"${azurerm_app_service.main.site_credential.0.password}\" destinationAppUrl=\"http://${azurerm_app_service.main.name}.azurewebsites.net\" SQLServerDBConnectionString=\"\" mySQLDBConnectionString=\"\" hostingProviderForumLink=\"\" controlPanelLink=\"http://windows.azure.com\" webSystem=\"WebSites\"><databases /></publishProfile><publishProfile profileName=\"${azurerm_app_service.main.name} - ReadOnly - FTP\" publishMethod=\"FTP\" publishUrl=\"ftp://waws-prod-blu-113dr.ftp.azurewebsites.windows.net/site/wwwroot\" ftpPassiveMode=\"True\" userName=\"${azurerm_app_service.main.name}\\${azurerm_app_service.main.site_credential.0.username}\" userPWD=\"${azurerm_app_service.main.site_credential.0.password}\" destinationAppUrl=\"http://${azurerm_app_service.main.name}.azurewebsites.net\" SQLServerDBConnectionString=\"\" mySQLDBConnectionString=\"\" hostingProviderForumLink=\"\" controlPanelLink=\"http://windows.azure.com\" webSystem=\"WebSites\"><databases /></publishProfile></publishData>"
+}
+EOT
+}
+
